@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+<!--开启注解扫描-->
+    <context:component-scan base-package="com.lsm">
+<!--        不扫描那些注解-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+<!--    注入ioc容器中-->
+<!--    <bean id="bookinfoimpl" class="com.lsm.server.impl.bookinfoimpl">-->
+<!--            <property name="bookinfoDao" ref="bookinfoDao"/>-->
+<!--    </bean>-->
+<!--    创建数据库连接池 通过c3p0连接池连接-->
+<!--    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">-->
+<!--        <property name="driverClass" value="com.mysql.jdbc.Driver"/>-->
+<!--        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/mybatis"/>-->
+<!--        <property name="user" value="root"/>-->
+<!--        <property name="password" value="123456"/>-->
+<!--    </bean>-->
+<!--    使用dbcp连接池连接-->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/mybatis?useAffectedRows=true&amp;serverTimezone=Asia/Shanghai&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false"></property>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+    </bean>
+<!--    配置事务管理器-->
+    <bean id="Manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+<!--       增加对事务的支持-->
+<!--    <tx:annotation-driven transaction-manager="Manager"></tx:annotation-driven>-->
+<!--    结合aop实现事务的植入-->
+    <tx:advice id="terceptor" transaction-manager="Manager">
+        <tx:attributes>
+<!--            那个方法需要被织入-->
+            <tx:method name="query" read-only="true"/>
+            <tx:method name="ins" propagation="REQUIRED"/>
+            <tx:method name="*" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+<!--    配置事务的切入-->
+    <aop:config>
+        <aop:pointcut id="Aterceptor" expression="execution(* com.lsm.dao.*.*(..))"/>
+        <aop:advisor advice-ref="terceptor" pointcut-ref="Aterceptor"/>
+    </aop:config>
+<!--    <bean id="demo" class="com.lsm.login.demo"/>-->
+<!--&lt;!&ndash;    配置事务切面&ndash;&gt;-->
+<!--    <aop:config>-->
+<!--&lt;!&ndash;        自定义事务&ndash;&gt;-->
+<!--       <aop:aspect ref="demo">-->
+<!--&lt;!&ndash;           切入的具体位置&ndash;&gt;-->
+<!--           <aop:pointcut id="asd" expression="execution(* com.lsm.dao.*.*(..))"/>-->
+<!--&lt;!&ndash;           前置通知&ndash;&gt;-->
+<!--           <aop:before method="begin" pointcut-ref="asd"/>-->
+<!--&lt;!&ndash;           后置通知&ndash;&gt;-->
+<!--           <aop:after method="end" pointcut-ref="asd"/>-->
+<!--       </aop:aspect>-->
+<!--    </aop:config>-->
+<!--&lt;!&ndash;    开启aop注解支持&ndash;&gt;-->
+<!--    <aop:aspectj-autoproxy/>-->
+    <!--    配置工厂-->
+    <bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer" id="mapperScannerConfigurer" >
+        <property name="basePackage" value="com.lsm.dao"></property>
+    </bean>
+</beans>
